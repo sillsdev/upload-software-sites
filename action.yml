@@ -1,0 +1,38 @@
+name: 'Upload to Software Site'
+description: 'Action to upload a file via SFTP our software sites'
+inputs:
+  hostname:
+    description: 'Server hostname'
+    required: true
+  username:
+    description: 'Username'
+    required: true
+  private_key:
+    description: 'Private key string'
+    required: true
+  target_directory:
+    description: 'Target upload directory on the server'
+    required: true
+  file_to_upload:
+    description: 'File to upload'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Create private key file
+      shell: bash
+      run: |
+        echo "${{ inputs.private_key }}" > /tmp/private_key
+        chmod 600 /tmp/private_key
+
+    - name: Upload file via SFTP
+      shell: bash
+      run: |
+        sftp -i /tmp/private_key -o StrictHostKeyChecking=no ${{ inputs.username }}@${{ inputs.hostname }} <<EOF
+        put ${{ inputs.file_to_upload }} ${{ inputs.target_directory }}
+        EOF
+
+    - name: Clean up private key file
+      shell: bash
+      run: |
+        rm -f /tmp/private_key
